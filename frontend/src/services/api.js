@@ -3,6 +3,8 @@
 
 const BASE = '/api'
 
+
+
 async function request(url, options = {}) {
   const response = await fetch(`${BASE}${url}`, {
     headers: {
