@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+.jwt-secret
 
 # Logs
 logs
@@ -34,3 +35,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Sauvegardes de la base (npm run seed)
+backups/

@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
 import { contratService } from '../services/contrat.service'
 import { abonneService } from '../services/abonne.service'
+import Pagination, { usePagination } from '../components/Pagination'
 import Alert from '../components/Alert'
+import FiltreSite, { correspondSite } from '../components/FiltreSite'
+import { authService } from '../services/auth.service'
 import Modal from '../components/Modal'
-import { formatDate, formatMoney, statutBadge } from '../utils/format'
+import { formatDate, formatMoney, statutBadge, toInputDate } from '../utils/format'
+
+// Mêmes valeurs que STATUTS_CONTRAT (backend/utils/integrite.js)
+const STATUTS = ['Actif', 'Suspendu', 'Résilié']
 
 const emptyForm = {
   numero_contrat: '',
@@ -11,7 +17,7 @@ const emptyForm = {
   type_contrat: '',
   date_debut: '',
   date_fin: '',
-  statut: '',
+  statut: 'Actif',
   montant: '',
 }
 
@@ -19,8 +25,11 @@ export default function Contrats() {
   const [contrats, setContrats] = useState([])
   const [abonnes, setAbonnes] = useState([])
   const [loading, setLoading] = useState(true)
+  // Suppressions (et gestion des tarifs) réservées aux administrateurs
+  const admin = authService.estAdmin()
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [filtreSite, setFiltreSite] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -64,10 +73,10 @@ export default function Contrats() {
       numero_contrat: c.numero_contrat || '',
       abonne_id: c.abonne_id || '',
       type_contrat: c.type_contrat || '',
-      date_debut: c.date_debut ? String(c.date_debut).slice(0, 10) : '',
-      date_fin: c.date_fin ? String(c.date_fin).slice(0, 10) : '',
-      statut: c.statut || '',
-      montant: c.montant || '',
+      date_debut: toInputDate(c.date_debut),
+      date_fin: toInputDate(c.date_fin),
+      statut: c.statut || 'Actif',
+      montant: c.montant ?? '',
     })
     setError('')
     setShowModal(true)
@@ -107,6 +116,7 @@ export default function Contrats() {
   }
 
   const filtered = contrats.filter((c) => {
+    if (!correspondSite(c, filtreSite)) return false
     const q = search.toLowerCase()
     return (
       (c.numero_contrat || '').toLowerCase().includes(q) ||
@@ -115,6 +125,7 @@ export default function Contrats() {
       abonneName(c.abonne_id).toLowerCase().includes(q)
     )
   })
+  const pagination = usePagination(filtered, search + '|' + filtreSite)
   return (
     <div>
       <div className="page-header">
@@ -123,6 +134,7 @@ export default function Contrats() {
           <p>{contrats.length} contrat(s) enregistré(s)</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <FiltreSite value={filtreSite} onChange={setFiltreSite} />
           <div className="search-bar">
             <input
               type="text"
@@ -145,55 +157,65 @@ export default function Contrats() {
         ) : filtered.length === 0 ? (
           <div className="empty">Aucun contrat trouvé</div>
         ) : (
-          <table className="table-contrats">
-            <thead>
-              <tr>
-                <th>N°</th>
-                <th>Numéro</th>
-                <th>Abonné</th>
-                <th>Type</th>
-                <th>Début</th>
-                <th>Fin</th>
-                <th>Statut</th>
-                <th>Montant</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.id}</td>
-                  <td>{c.numero_contrat}</td>
-                  <td>{abonneName(c.abonne_id)}</td>
-                  <td>{c.type_contrat}</td>
-                  <td>{formatDate(c.date_debut)}</td>
-                  <td>{formatDate(c.date_fin)}</td>
-                  <td>
-                    <span className={`badge ${statutBadge(c.statut)}`}>
-                      {c.statut}
-                    </span>
-                  </td>
-                  <td>{formatMoney(c.montant)}</td>
-                  <td>
-                    <div className="actions-cell">
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => openEdit(c)}
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(c.id)}
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </td>
+          <>
+            <table className="table-contrats">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Numéro</th>
+                  <th>Abonné</th>
+                  <th>Site</th>
+                  <th>Type</th>
+                  <th>Début</th>
+                  <th>Fin</th>
+                  <th>Statut</th>
+                  <th>Montant</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pagination.pageItems.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.id}</td>
+                    <td>{c.numero_contrat}</td>
+                    <td>{abonneName(c.abonne_id)}</td>
+                    <td>
+                      <span className="badge badge-blue badge-site">{c.site_code || '—'}</span>
+                      <div className="cell-sub">{c.site_quartier}</div>
+                    </td>
+                    <td>{c.type_contrat}</td>
+                    <td>{formatDate(c.date_debut)}</td>
+                    <td>{formatDate(c.date_fin)}</td>
+                    <td>
+                      <span className={`badge ${statutBadge(c.statut)}`}>
+                        {c.statut}
+                      </span>
+                    </td>
+                    <td>{formatMoney(c.montant)}</td>
+                    <td>
+                      <div className="actions-cell">
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => openEdit(c)}
+                        >
+                          Modifier
+                        </button>
+                        {admin && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(c.id)}
+                          >
+                            Supprimer
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Pagination pagination={pagination} />
+          </>
         )}
       </div>
 
@@ -209,14 +231,14 @@ export default function Contrats() {
               >
                 Annuler
               </button>
-              <button className="btn" onClick={handleSubmit} disabled={saving}>
+              <button className="btn" type="submit" form="contrat-form" disabled={saving}>
                 {saving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </>
           }
         >
           {error && <Alert type="error" message={error} />}
-          <form className="form-grid" onSubmit={handleSubmit}>
+          <form id="contrat-form" className="form-grid" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Numéro contrat *</label>
               <input
@@ -243,29 +265,34 @@ export default function Contrats() {
               </select>
             </div>
             <div className="form-group">
-              <label>Type de contrat</label>
+              <label>Type de contrat *</label>
               <input
                 name="type_contrat"
                 value={form.type_contrat}
                 onChange={handleChange}
+                placeholder="Domestique, Professionnel..."
+                required
               />
             </div>
             <div className="form-group">
-              <label>Statut</label>
-              <input
-                name="statut"
-                value={form.statut}
-                onChange={handleChange}
-                placeholder="Actif, Résilié..."
-              />
+              <label>Statut *</label>
+              <select name="statut" value={form.statut} onChange={handleChange} required>
+                {STATUTS.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+              <small className="form-hint">
+                Suspendu ou Résilié : plus aucun nouveau relevé n'est accepté
+              </small>
             </div>
             <div className="form-group">
-              <label>Date début</label>
+              <label>Date début *</label>
               <input
                 type="date"
                 name="date_debut"
                 value={form.date_debut}
                 onChange={handleChange}
+                required
               />
             </div>
             <div className="form-group">
@@ -275,13 +302,15 @@ export default function Contrats() {
                 name="date_fin"
                 value={form.date_fin}
                 onChange={handleChange}
+                min={form.date_debut || undefined}
               />
             </div>
             <div className="form-group full">
-              <label>Montant</label>
+              <label>Montant (Ar)</label>
               <input
                 type="number"
                 step="0.01"
+                min="0"
                 name="montant"
                 value={form.montant}
                 onChange={handleChange}
