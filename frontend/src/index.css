@@ -141,282 +141,274 @@ a {
   opacity: 1;
 }
 
-/* ---------- Login ---------- */
-/* Fond bleu JIRAMA plein écran : héros à gauche, carte de connexion à droite */
+/* Pastille de compteur dans le menu (ex. réclamations non résolues) :
+   orange JIRAMA, chiffre bleu nuit (contraste 5,3:1) */
+.nav-pastille {
+  margin-left: auto;
+  min-width: 1.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--primary-deep);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Login (maquette « JIRAMA Toliara ») ---------- */
+/* Orange vif de la maquette ; texte blanc ≥ 19px gras (contraste AA « grand texte ») */
+:root {
+  --login-orange: #ec6411;
+  --login-orange-fonce: #c94f08;
+}
+
 .login-page {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 3rem;
-  padding: 3rem clamp(1.5rem, 5vw, 5rem);
-  background:
-    radial-gradient(ellipse at 75% 20%, rgba(255, 255, 255, 0.10), transparent 55%),
-    linear-gradient(135deg, var(--primary-deep) 0%, var(--primary-dark) 55%, var(--primary) 100%);
-  color: #fff;
+  display: flex;
+  background: #f4f7fb;
+  isolation: isolate;
 }
 
-.login-glow {
+/* Formes orange en diagonale, en haut et en bas à droite */
+.login-page::before,
+.login-page::after {
+  content: '';
   position: absolute;
-  border-radius: 50%;
+  z-index: -1;
   pointer-events: none;
-  filter: blur(10px);
+  background: linear-gradient(135deg, var(--login-orange), #f59a23);
 }
 
-.login-glow-1 {
-  width: 480px;
-  height: 480px;
-  top: -160px;
-  right: -120px;
-  background: radial-gradient(circle, rgba(243, 156, 31, 0.28), transparent 70%);
+.login-page::before {
+  top: 0;
+  right: 0;
+  width: 34%;
+  height: 34%;
+  clip-path: polygon(30% 0, 100% 0, 100% 100%, 92% 100%, 72% 18%, 18% 18%);
 }
 
-.login-glow-2 {
-  width: 380px;
-  height: 380px;
-  bottom: 60px;
-  left: 35%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.10), transparent 70%);
-}
-
-.login-waves {
-  position: absolute;
-  left: 0;
+.login-page::after {
   bottom: 0;
-  width: 100%;
-  height: 32vh;
-  pointer-events: none;
+  right: 0;
+  width: 40%;
+  height: 42%;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%, 12% 92%, 82% 92%, 94% 10%);
 }
 
-.login-waves .wave-orange {
-  fill: var(--accent);
-  opacity: 0.9;
+/* Visuel de gauche : partie gauche de la maquette (logo, carte, chantier).
+   Largeur bornée (≈ 1,02 × la hauteur) pour ne jamais montrer la carte dessinée
+   dans la maquette ; bord droit fondu dans le fond clair. */
+.login-visuel {
+  flex: 0 0 min(58%, 102vh);
+  background: url('/login-visuel-toliara.png') left center / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(to right, #000 80%, transparent);
+  mask-image: linear-gradient(to right, #000 80%, transparent);
 }
 
-.login-waves .wave-blue {
-  fill: var(--primary-deep);
-}
-
-.login-hero,
-.login-card,
-.login-slogan {
-  position: relative;
-  z-index: 1;
-}
-
-/* Héros */
-.login-hero-brand {
+.login-zone {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  justify-content: center;
+  padding: 2rem clamp(1.25rem, 4vw, 4rem);
 }
 
-.login-logo-tile {
-  width: 96px;
-  height: 96px;
-  flex-shrink: 0;
+.login-card {
+  width: min(470px, 100%);
   background: #fff;
   border-radius: 18px;
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-}
-
-.login-logo-tile img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.login-logo-tile.small {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  box-shadow: none;
-}
-
-.login-hero-name {
-  font-size: clamp(2.2rem, 4vw, 3.4rem);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  line-height: 1;
-}
-
-.login-hero-tagline {
-  margin-top: 0.35rem;
-  font-size: 1.1rem;
-  font-style: italic;
-  color: var(--sidebar-text);
-}
-
-.login-hero-title {
-  margin-top: 2.5rem;
-  font-size: clamp(1.6rem, 2.8vw, 2.4rem);
-  font-weight: 500;
-  line-height: 1.25;
-  max-width: 560px;
-}
-
-.login-hero-title span {
-  display: block;
-  font-weight: 800;
-  color: var(--accent);
-}
-
-.login-hero-bar {
-  width: 90px;
-  height: 5px;
-  margin-top: 1.1rem;
-  border-radius: 3px;
-  background: var(--accent);
-}
-
-.login-features {
-  list-style: none;
-  display: flex;
-  gap: 2rem;
-  margin-top: 2.5rem;
-}
-
-.login-features li {
-  width: 140px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  text-align: center;
-  font-size: 0.92rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.login-feature-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: var(--accent);
-}
-
-/* Slogan manuscrit, en haut à droite */
-.login-slogan {
-  position: absolute;
-  top: 2rem;
-  right: clamp(1.5rem, 4vw, 4rem);
-  font-family: 'Segoe Script', 'Brush Script MT', cursive;
-  font-size: 1.35rem;
-  line-height: 1.3;
-  text-align: right;
-  color: rgba(255, 255, 255, 0.85);
-  transform: rotate(-6deg);
-}
-
-.login-slogan::after {
-  content: '';
-  display: block;
-  width: 110px;
-  height: 4px;
-  margin: 0.5rem 0 0 auto;
-  border-radius: 3px;
-  background: var(--accent);
-}
-
-/* Carte de connexion translucide */
-.login-card {
-  width: 100%;
-  max-width: 400px;
-  justify-self: center;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(10px);
-  border-radius: 14px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-  padding: 2rem;
+  border-top: 5px solid var(--login-orange);
+  box-shadow: 0 25px 60px rgba(30, 41, 59, 0.18);
+  padding: 2.25rem 2.25rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   color: var(--text);
 }
 
-.login-card-head {
+.login-icone {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--login-orange);
+  color: #fff;
   display: flex;
   align-items: center;
-  gap: 0.9rem;
-  margin-bottom: 0.5rem;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(236, 100, 17, 0.35);
 }
 
-.login-card-name {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.35rem;
+.login-titre {
+  margin-top: 0.25rem;
+  text-align: center;
+  font-size: 2rem;
   font-weight: 800;
-  color: var(--primary-dark);
-}
-
-.login-card-name .brand-mark {
-  width: 24px;
-  height: 24px;
+  color: #10233f;
 }
 
 .login-subtitle {
-  font-size: 0.88rem;
-  color: var(--muted);
+  margin-top: -0.6rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-size: 0.98rem;
+  color: var(--text-soft);
 }
 
-.login-card .form-group input {
-  background: var(--primary-soft);
-  border-color: var(--primary-border);
-  padding: 0.7rem 0.85rem;
+/* Champ avec icône à gauche (et bouton œil à droite pour le mot de passe) */
+.login-champ {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.login-card .form-group input:focus {
+.login-champ-icone {
+  position: absolute;
+  left: 1rem;
+  color: #3d4a5c;
+  display: flex;
+  pointer-events: none;
+}
+
+.login-champ input {
+  width: 100%;
+  padding: 0.85rem 3rem 0.85rem 3rem;
+  border: 1px solid #d5dbe3;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
   background: #fff;
+  color: var(--text);
+}
+
+.login-champ input:focus {
+  outline: none;
+  border-color: var(--login-orange);
+  box-shadow: 0 0 0 3px rgba(236, 100, 17, 0.18);
+}
+
+.login-oeil {
+  position: absolute;
+  right: 0.75rem;
+  display: flex;
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  color: #3d4a5c;
+  cursor: pointer;
+}
+
+.login-oeil:hover {
+  color: var(--login-orange-fonce);
+}
+
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.login-souvenir {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.login-souvenir input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--login-orange);
+}
+
+.login-oubli {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--login-orange-fonce);
+  cursor: pointer;
+}
+
+.login-oubli:hover {
+  text-decoration: underline;
+}
+
+.login-submit {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--login-orange);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: var(--login-orange-fonce);
+}
+
+.login-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .login-card .alert {
   margin-bottom: 0;
 }
 
-.login-submit {
-  justify-content: center;
-  padding: 0.75rem 1rem;
-  font-size: 0.95rem;
-  margin-top: 0.25rem;
+.login-pied {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
+.login-pied::before,
+.login-pied::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Écran étroit : visuel réduit en bandeau au-dessus de la carte (logo visible) */
 @media (max-width: 900px) {
   .login-page {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    padding: 2rem 1.25rem 8rem;
+    flex-direction: column;
   }
 
-  .login-slogan,
-  .login-features,
-  .login-hero-title,
-  .login-hero-bar {
+  .login-visuel {
+    flex: 0 0 210px;
+    background-size: auto 210%;
+    background-position: left top;
+    -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent);
+    mask-image: linear-gradient(to bottom, #000 75%, transparent);
+  }
+
+  .login-page::before {
     display: none;
   }
 
-  .login-hero-brand {
-    justify-content: center;
-  }
-
-  .login-logo-tile {
-    width: 72px;
-    height: 72px;
+  .login-card {
+    padding: 1.75rem 1.25rem 1.25rem;
   }
 }
+
 
 .sidebar .brand {
   font-size: 1.25rem;
@@ -508,44 +500,6 @@ a {
   padding-left: 1rem;
 }
 
-/* ---------- Carte de bienvenue ---------- */
-.welcome-card {
-  background: var(--primary-soft);
-  border: 1px solid var(--primary-border);
-  border-left: 5px solid var(--primary);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1.75rem;
-}
-
-.welcome-card h2 {
-  font-size: 1.4rem;
-  color: var(--primary-dark);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.welcome-card p {
-  margin-top: 0.75rem;
-  color: var(--text-soft);
-  line-height: 1.6;
-}
-
-.welcome-card .welcome-tip {
-  margin-top: 1rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--card);
-  border: 1px solid var(--primary-border);
-  border-radius: 8px;
-  padding: 0.6rem 0.9rem;
-  font-size: 0.88rem;
-  color: var(--primary-dark);
-  font-weight: 500;
-}
-
 /* ---------- Cards ---------- */
 .card {
   background: var(--card);
@@ -609,6 +563,12 @@ a {
   color: var(--muted);
   font-size: 0.9rem;
   margin-top: 0.2rem;
+}
+
+.stat-card .stat-detail {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--text-soft);
 }
 
 /* ---------- Buttons ---------- */
@@ -827,6 +787,254 @@ tbody tr:hover {
 .badge-blue {
   background: var(--primary-soft);
   color: var(--primary-dark);
+}
+
+/* Neutre : état terminé (ex. réclamation résolue) */
+.badge-gris {
+  background: var(--surface-alt);
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+}
+
+/* ---------- Réclamations (pages/Reclamations.jsx) ---------- */
+.reclam-grille {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.reclam-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+/* Onglets de filtre accolés (segmented control) */
+.segments {
+  display: inline-flex;
+  align-self: flex-start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.segments button {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.segments button:last-child {
+  border-right: none;
+}
+
+.segments button:hover:not(.actif) {
+  background: var(--primary-soft);
+}
+
+.segments button.actif {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.reclam-cartes {
+  padding: 0;
+}
+
+.reclam-cartes .pagination {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.reclam-items {
+  list-style: none;
+}
+
+.reclam-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0.85rem 0.85rem;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.reclam-item:hover {
+  background: var(--surface-alt);
+}
+
+/* Réclamation affichée : liseré orange (comme l'élément actif du menu) */
+.reclam-item.selection {
+  border-left-color: var(--accent);
+  background: var(--primary-soft);
+}
+
+.reclam-item-texte {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.reclam-item-texte strong {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.reclam-item-texte span {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.reclam-fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.reclam-fiche-vide {
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.reclam-fiche-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.reclam-kicker {
+  display: block;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+}
+
+.reclam-fiche-entete h2 {
+  margin-top: 0.2rem;
+  font-size: 1.45rem;
+  color: var(--text);
+}
+
+.reclam-description {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.reclam-infos {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 0.45rem 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+.reclam-infos dt {
+  color: var(--muted);
+}
+
+.reclam-lien {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.reclam-lien:hover {
+  text-decoration: underline;
+}
+
+.reclam-suivi h3 {
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.reclam-suivi ol {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.reclam-suivi li {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.reclam-suivi time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.reclam-note {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.reclam-note input {
+  flex: 1;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.reclam-note input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.reclam-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.reclam-supprimer {
+  margin-left: auto;
+}
+
+@media (max-width: 1000px) {
+  .reclam-grille {
+    grid-template-columns: 1fr;
+  }
+
+  .reclam-fiche {
+    position: static;
+  }
 }
 
 
@@ -1437,51 +1645,195 @@ tbody tr:hover {
   }
 }
 
-/* ---------- Charts Dashboard ---------- */
-.charts-section {
-  margin-top: 2rem;
+/* ---------- Tableau de bord (pages/Dashboard.jsx) ---------- */
+/* Rechargement des statistiques après un changement de filtre */
+.dashboard.en-cours .chart-card,
+.dashboard.en-cours .stat-card {
+  opacity: 0.6;
+  transition: opacity 0.15s;
 }
-.charts-section h2 {
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
+
+.dashboard-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.dashboard-filtres label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dashboard-filtres select {
+  min-width: 150px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
   color: var(--text);
+  font-size: 0.9rem;
 }
+
+.dashboard-filtres select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
 }
-.line-chart-wrapper,
-.pie-chart-wrapper {
+
+/* Consommation eau + électricité + état des contrats sur une même ligne */
+.charts-row-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.chart-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1rem;
+  padding: 1.1rem 1.25rem 1.25rem;
   min-width: 0;
 }
+
+.chart-card-head {
+  margin-bottom: 0.75rem;
+}
+
+.chart-card-head h3 {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.chart-card-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 /* Chart.js (maintainAspectRatio: false) a besoin d'un parent à hauteur fixe */
 .chart-canvas {
   position: relative;
-  height: 280px;
+  height: 260px;
 }
+
 .chart-empty {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Anneau + légende chiffrée */
+.anneau {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  height: 100%;
+}
+
+.anneau-graphique {
+  position: relative;
+  flex: 0 0 46%;
+  height: 100%;
+  max-height: 220px;
+}
+
+.anneau-total {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.anneau-total strong {
+  font-size: 1.6rem;
+  color: var(--text);
+  line-height: 1;
+}
+
+.anneau-total span {
+  font-size: 0.75rem;
   color: var(--muted);
 }
-.chart-label {
-  margin-top: 0.5rem;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--muted);
+
+.anneau-legende {
+  flex: 1;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
 }
+
+.anneau-legende li {
+  display: grid;
+  grid-template-columns: 12px 1fr auto 3.2rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.pastille {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.anneau-libelle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anneau-pct {
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Carte étroite (ligne à 3 colonnes) : légende sous l'anneau, jamais tronquée */
+.charts-row-3 .anneau {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.charts-row-3 .anneau-graphique {
+  flex: 0 0 150px;
+  max-height: 150px;
+}
+
+.charts-row-3 .anneau-total strong {
+  font-size: 1.3rem;
+}
+
+@media (max-width: 1100px) {
+  .charts-row-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
-  .charts-row {
+  .charts-row,
+  .charts-row-3 {
     grid-template-columns: 1fr;
   }
 }
-/* ---------- End Charts ---------- */
 

@@ -10,9 +10,10 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../config/db');
 const { createFactureTables, genererFacture, STATUT_PAYEE } = require('../service/facture.service');
-const { initSites } = require('../config/init-db');
+const { initSites, initReclamations } = require('../config/init-db');
+const { insererReclamations } = require('./donnees-reclamations');
 
-const TABLES = ['site', 'abonne', 'contrat', 'tarif', 'compteur', 'releve', 'facture', 'facture_ligne'];
+const TABLES = ['site', 'abonne', 'contrat', 'tarif', 'compteur', 'releve', 'facture', 'facture_ligne', 'reclamation', 'reclamation_suivi'];
 
 // Générateur pseudo-aléatoire déterministe : le jeu de données est identique à chaque exécution
 let graine = 20261107;
@@ -105,7 +106,7 @@ const sauvegarder = async () => {
 
 const remplir = async (client) => {
     await client.query(
-        'TRUNCATE facture_ligne, facture, releve, compteur, contrat, tarif, abonne, site RESTART IDENTITY'
+        'TRUNCATE reclamation_suivi, reclamation, facture_ligne, facture, releve, compteur, contrat, tarif, abonne, site RESTART IDENTITY'
     );
 
     const siteIds = {};
@@ -237,10 +238,14 @@ const remplir = async (client) => {
         if (paye) payees++;
     }
 
+    // Réclamations de démonstration, signées par le premier administrateur
+    const admin = (await client.query("SELECT id FROM utilisateur WHERE role = 'admin' ORDER BY id LIMIT 1")).rows[0];
+    const nbReclamations = await insererReclamations(client, admin ? admin.id : null);
+
     console.log(
         `Insérés : ${TARIFS.length} tarifs, ${ABONNES.length} abonnés, ${ABONNES.length} contrats, ` +
         `${nbCompteurs} compteurs, ${nbReleves} relevés, ${factures.length} factures mensuelles ` +
-        `(${payees} payées, ${factures.length - payees} impayées)`
+        `(${payees} payées, ${factures.length - payees} impayées), ${nbReclamations} réclamations`
     );
 };
 
@@ -248,6 +253,7 @@ const remplir = async (client) => {
     const client = await db.connect();
     try {
         await initSites();
+        await initReclamations();
         await createFactureTables();
         await sauvegarder();
 

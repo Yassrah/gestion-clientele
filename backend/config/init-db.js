@@ -45,6 +45,34 @@ const initSites = async () => {
     await db.query('ALTER TABLE abonne ADD COLUMN IF NOT EXISTS site_id INTEGER REFERENCES site(id)');
 };
 
+// Réclamations des abonnés et leur historique de suivi.
+// Le n° affiché (R-0412) est dérivé de l'id : 'R-' || lpad(id, 4, '0').
+const initReclamations = async () => {
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS reclamation (
+            id SERIAL PRIMARY KEY,
+            abonne_id INTEGER NOT NULL REFERENCES abonne(id),
+            type VARCHAR(100) NOT NULL,
+            description TEXT NOT NULL,
+            canal VARCHAR(80) NOT NULL,
+            statut VARCHAR(10) NOT NULL DEFAULT 'Ouverte'
+                CHECK (statut IN ('Ouverte', 'En cours', 'Résolue')),
+            assignee_id INTEGER REFERENCES utilisateur(id),
+            date_reception DATE NOT NULL DEFAULT CURRENT_DATE,
+            date_resolution DATE
+        )
+    `);
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS reclamation_suivi (
+            id SERIAL PRIMARY KEY,
+            reclamation_id INTEGER NOT NULL REFERENCES reclamation(id) ON DELETE CASCADE,
+            date_suivi TIMESTAMP NOT NULL DEFAULT now(),
+            texte TEXT NOT NULL,
+            utilisateur_id INTEGER REFERENCES utilisateur(id)
+        )
+    `);
+};
+
 // Garantit l'unicité de abonne.numero_abonne (si aucun index unique n'existe déjà)
 const initAbonneUnique = async () => {
     const existing = await db.query(`
@@ -107,6 +135,7 @@ const initDb = async () => {
     await initAuthTable();
     await initRoles();
     await initSites();
+    await initReclamations();
     await migrerFacturesParReleve();
     await createFactureTables();
     await initCompteurTarifFk();
@@ -128,5 +157,6 @@ module.exports = {
     initAuthTable,
     initRoles,
     initSites,
+    initReclamations,
     initDb
 };

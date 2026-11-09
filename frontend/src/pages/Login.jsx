@@ -2,13 +2,25 @@ import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Alert from '../components/Alert'
 import { authService } from '../services/auth.service'
-import { IconAbonnes, IconCompteurs, IconEclair, IconFactures } from '../components/Icons'
+import {
+  IconCadenas,
+  IconConnexion,
+  IconOeil,
+  IconOeilBarre,
+  IconUtilisateur,
+} from '../components/Icons'
 
+// Page de connexion « JIRAMA Toliara » :
+//   à gauche, le visuel de la maquette (public/login-visuel-toliara.png : logo, carte, chantier) ;
+//   à droite, la carte de connexion.
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const [form, setForm] = useState({ username: '', password: '' })
+  const [seSouvenir, setSeSouvenir] = useState(true)
+  const [voirMotDePasse, setVoirMotDePasse] = useState(false)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // Page demandée avant la redirection vers /login
@@ -23,9 +35,10 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setInfo('')
     setSubmitting(true)
     try {
-      await authService.login(form.username.trim(), form.password)
+      await authService.login(form.username.trim(), form.password, seSouvenir)
       navigate(from, { replace: true })
     } catch (err) {
       setError(err.message)
@@ -34,108 +47,94 @@ export default function Login() {
     }
   }
 
+  // Pas d'envoi d'e-mail : les comptes sont gérés par l'administrateur (scripts/create-user.js)
+  const handleOubli = () => {
+    setError('')
+    setInfo(
+      'Contactez l\'administrateur de l\'application : il peut définir un nouveau mot de passe pour votre compte.'
+    )
+  }
+
   return (
     <div className="login-page">
-      {/* Décor : halos lumineux et vagues bleu / orange */}
-      <div className="login-glow login-glow-1" aria-hidden="true" />
-      <div className="login-glow login-glow-2" aria-hidden="true" />
-      <svg className="login-waves" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
-        <path className="wave-orange" d="M0,224 C240,170 480,300 760,250 C1040,200 1240,120 1440,160 L1440,320 L0,320 Z" />
-        <path className="wave-blue" d="M0,270 C300,220 560,320 860,285 C1120,255 1300,210 1440,230 L1440,320 L0,320 Z" />
-      </svg>
+      <div className="login-visuel" role="img" aria-label="JIRAMA Toliara — Ensemble pour un meilleur service à nos clients" />
 
-      <section className="login-hero">
-        <div className="login-hero-brand">
-          <div className="login-logo-tile">
-            <img src="/logo-jirama.png" alt="Logo JIRAMA" />
+      <div className="login-zone">
+        <form className="login-card" onSubmit={handleSubmit}>
+          <div className="login-icone">
+            <IconCadenas size={34} />
           </div>
-          <div>
-            <div className="login-hero-name">JIRAMA</div>
-            <div className="login-hero-tagline">Jiro sy Rano Malagasy</div>
-          </div>
-        </div>
+          <h1 className="login-titre">Connexion</h1>
+          <p className="login-subtitle">Accédez à votre espace de gestion clientèle</p>
 
-        <h2 className="login-hero-title">
-          Suivez et gérez votre clientèle <span>en toute simplicité</span>
-        </h2>
-        <div className="login-hero-bar" />
+          <Alert message={error} onClose={() => setError('')} />
+          <Alert type="success" message={info} onClose={() => setInfo('')} />
 
-        <ul className="login-features">
-          <li>
-            <span className="login-feature-icon">
-              <IconAbonnes size={26} />
+          <label className="login-champ">
+            <span className="login-champ-icone">
+              <IconUtilisateur size={20} />
             </span>
-            Abonnés et contrats en un clic
-          </li>
-          <li>
-            <span className="login-feature-icon">
-              <IconCompteurs size={26} />
+            <input
+              name="username"
+              value={form.username}
+              onChange={handleChange}
+              placeholder="Nom d'utilisateur"
+              aria-label="Nom d'utilisateur"
+              autoComplete="username"
+              autoFocus
+              required
+            />
+          </label>
+
+          <label className="login-champ">
+            <span className="login-champ-icone">
+              <IconCadenas size={20} />
             </span>
-            Suivi des relevés et consommations
-          </li>
-          <li>
-            <span className="login-feature-icon">
-              <IconFactures size={26} />
-            </span>
-            Facturation automatique
-          </li>
-        </ul>
-      </section>
+            <input
+              name="password"
+              type={voirMotDePasse ? 'text' : 'password'}
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Mot de passe"
+              aria-label="Mot de passe"
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              className="login-oeil"
+              onClick={() => setVoirMotDePasse(!voirMotDePasse)}
+              aria-label={voirMotDePasse ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              title={voirMotDePasse ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+            >
+              {voirMotDePasse ? <IconOeil size={20} /> : <IconOeilBarre size={20} />}
+            </button>
+          </label>
 
-      <p className="login-slogan" aria-hidden="true">
-        L'eau et l'électricité,
-        <br />
-        notre engagement
-      </p>
-
-      <form className="login-card" onSubmit={handleSubmit}>
-        <div className="login-card-head">
-          <div className="login-logo-tile small">
-            <img src="/logo-jirama.png" alt="" />
+          <div className="login-options">
+            <label className="login-souvenir">
+              <input
+                type="checkbox"
+                checked={seSouvenir}
+                onChange={(e) => setSeSouvenir(e.target.checked)}
+              />
+              Se souvenir de moi
+            </label>
+            <button type="button" className="login-oubli" onClick={handleOubli}>
+              Mot de passe oublié ?
+            </button>
           </div>
-          <div>
-            <div className="login-card-name">
-              <span className="brand-mark">
-                <IconEclair size={14} />
-              </span>
-              JIRAMA
-            </div>
-            <p className="login-subtitle">Gestion clientèle — connexion</p>
+
+          <button type="submit" className="login-submit" disabled={submitting}>
+            <IconConnexion size={22} />
+            {submitting ? 'Connexion...' : 'Se connecter'}
+          </button>
+
+          <div className="login-pied">
+            <span>JIRAMA Toliara</span>
           </div>
-        </div>
-
-        <Alert message={error} onClose={() => setError('')} />
-
-        <div className="form-group">
-          <label htmlFor="username">Identifiant</label>
-          <input
-            id="username"
-            name="username"
-            value={form.username}
-            onChange={handleChange}
-            autoComplete="username"
-            autoFocus
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Mot de passe</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            autoComplete="current-password"
-            required
-          />
-        </div>
-
-        <button type="submit" className="btn login-submit" disabled={submitting}>
-          {submitting ? 'Connexion...' : 'Se connecter'}
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { abonneService } from '../services/abonne.service'
 import Pagination, { usePagination } from '../components/Pagination'
 import Alert from '../components/Alert'
@@ -24,7 +25,9 @@ export default function Abonnes() {
   // Suppressions (et gestion des tarifs) réservées aux administrateurs
   const admin = authService.estAdmin()
   const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
+  // ?q= : recherche pré-remplie (ex. lien « Abonné → » d'une réclamation)
+  const [params] = useSearchParams()
+  const [search, setSearch] = useState(params.get('q') || '')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)

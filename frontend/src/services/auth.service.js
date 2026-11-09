@@ -1,9 +1,10 @@
 import { api, session } from './api'
 
 export const authService = {
-  login: async (username, password) => {
+  // seSouvenir : garde la session après fermeture du navigateur (voir session dans api.js)
+  login: async (username, password, seSouvenir = true) => {
     const { token, user } = await api.post('/auth/login', { username, password })
-    session.save(token, user)
+    session.save(token, user, seSouvenir)
     return user
   },
   logout: () => session.clear(),

@@ -11,6 +11,7 @@ import Tarifs from './pages/Tarifs'
 import Facture from './pages/Facture'
 import Factures from './pages/Factures'
 import Sites from './pages/Sites'
+import Reclamations from './pages/Reclamations'
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="releves" element={<Releves />} />
         <Route path="tarifs" element={<Tarifs />} />
         <Route path="factures" element={<Factures />} />
+        <Route path="reclamations" element={<Reclamations />} />
       </Route>
       {/* Facture imprimable : page pleine largeur, hors du layout */}
       <Route

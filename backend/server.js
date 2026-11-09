@@ -20,6 +20,8 @@ app.use('/api/compteur', verifyToken, require('./route/compteur.route'));
 app.use('/api/tarif', verifyToken, require('./route/tarif.route'));
 app.use('/api/facture', verifyToken, require('./route/facture.route'));
 app.use('/api/site', verifyToken, require('./route/site.route'));
+app.use('/api/stats', verifyToken, require('./route/stats.route'));
+app.use('/api/reclamation', verifyToken, require('./route/reclamation.route'));
 app.get('/', (req, res) => {
     res.send('API Gestion Clientele');
 });
