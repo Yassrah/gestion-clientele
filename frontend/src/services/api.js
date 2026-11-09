@@ -3,26 +3,36 @@
 
 const BASE = '/api'
 
-// Session (jeton JWT + utilisateur) conservée dans le localStorage
+// Session (jeton JWT + utilisateur) :
+//   « Se souvenir de moi » coché   → localStorage (survit à la fermeture du navigateur)
+//   « Se souvenir de moi » décoché → sessionStorage (effacée à la fermeture du navigateur)
 const TOKEN_KEY = 'gc_token'
 const USER_KEY = 'gc_user'
 
+// Stockage qui contient la session en cours (localStorage par défaut)
+const stockageActuel = () => (sessionStorage.getItem(TOKEN_KEY) ? sessionStorage : localStorage)
+
 export const session = {
-  getToken: () => localStorage.getItem(TOKEN_KEY),
+  getToken: () => stockageActuel().getItem(TOKEN_KEY),
   getUser: () => {
     try {
-      return JSON.parse(localStorage.getItem(USER_KEY))
+      return JSON.parse(stockageActuel().getItem(USER_KEY))
     } catch {
       return null
     }
   },
-  save: (token, user) => {
-    localStorage.setItem(TOKEN_KEY, token)
-    localStorage.setItem(USER_KEY, JSON.stringify(user))
+  // persistant non précisé : on reste dans le stockage de la session en cours
+  save: (token, user, persistant = stockageActuel() === localStorage) => {
+    session.clear()
+    const stockage = persistant ? localStorage : sessionStorage
+    stockage.setItem(TOKEN_KEY, token)
+    stockage.setItem(USER_KEY, JSON.stringify(user))
   },
   clear: () => {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    for (const stockage of [localStorage, sessionStorage]) {
+      stockage.removeItem(TOKEN_KEY)
+      stockage.removeItem(USER_KEY)
+    }
   },
 }
 

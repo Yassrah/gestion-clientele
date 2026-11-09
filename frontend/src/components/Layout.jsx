@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { authService } from '../services/auth.service'
+import { reclamationService } from '../services/reclamation.service'
 import {
   IconDashboard,
   IconAbonnes,
@@ -10,6 +11,7 @@ import {
   IconReleves,
   IconFactures,
   IconTarifs,
+  IconReclamations,
   IconUtilisateur,
   IconDeconnexion,
 } from './Icons'
@@ -22,17 +24,32 @@ const links = [
   { to: '/compteurs', label: 'Compteurs', Icon: IconCompteurs },
   { to: '/releves', label: 'Relevés', Icon: IconReleves },
   { to: '/factures', label: 'Factures', Icon: IconFactures },
+  { to: '/reclamations', label: 'Réclamations', Icon: IconReclamations, pastille: 'reclamations' },
   { to: '/tarifs', label: 'Tarifs', Icon: IconTarifs },
 ]
 
 export default function Layout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [user, setUser] = useState(authService.getUser())
+  const [pastilles, setPastilles] = useState({})
 
   // Rôle à jour (sessions ouvertes avant l'ajout des rôles, ou rôle modifié depuis)
   useEffect(() => {
     authService.rafraichir().then(setUser).catch(() => {})
   }, [])
+
+  // Pastille « réclamations non résolues » : à chaque page et après chaque action (événement)
+  useEffect(() => {
+    const maj = () =>
+      reclamationService
+        .compter()
+        .then(({ non_resolues }) => setPastilles((p) => ({ ...p, reclamations: non_resolues })))
+        .catch(() => {})
+    maj()
+    window.addEventListener('reclamations-maj', maj)
+    return () => window.removeEventListener('reclamations-maj', maj)
+  }, [location.pathname])
 
   const handleLogout = () => {
     authService.logout()
@@ -47,10 +64,15 @@ export default function Layout() {
           Gestion Clientèle
         </div>
         <nav>
-          {links.map(({ to, label, end, Icon }) => (
+          {links.map(({ to, label, end, Icon, pastille }) => (
             <NavLink key={to} to={to} end={end}>
               <Icon />
               <span>{label}</span>
+              {pastille && pastilles[pastille] > 0 && (
+                <span className="nav-pastille" aria-label={`${pastilles[pastille]} non résolue(s)`}>
+                  {pastilles[pastille]}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
