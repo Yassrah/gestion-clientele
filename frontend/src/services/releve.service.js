@@ -6,4 +6,5 @@ export const releveService = {
   update: (id, data) => api.put(`/releve/${id}`, data),
   remove: (id) => api.del(`/releve/${id}`),
   getByAbonne: (nom) => api.get(`/releve/abonne/${encodeURIComponent(nom)}`),
+  getFacture: (id) => api.get(`/releve/facture/${id}`),
 }

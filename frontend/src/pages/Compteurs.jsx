@@ -1,24 +1,40 @@
 import { useEffect, useState } from 'react'
 import { compteurService } from '../services/compteur.service'
 import { contratService } from '../services/contrat.service'
+import { tarifService } from '../services/tarif.service'
+import Pagination, { usePagination } from '../components/Pagination'
 import Alert from '../components/Alert'
+import { authService } from '../services/auth.service'
 import Modal from '../components/Modal'
-import { formatDate, statutBadge } from '../utils/format'
+import { formatDate, formatMoney, statutBadge, toInputDate } from '../utils/format'
 
 const emptyForm = {
   numero_compteur: '',
   type_compteur: '',
   marque: '',
   date_installation: '',
-  statut: '',
+  statut: 'Actif',
   contrat_id: '',
+  tarif_id: '',
+}
+
+// Mêmes valeurs que STATUTS_COMPTEUR (backend/utils/integrite.js)
+const STATUTS = ['Actif', 'Hors service']
+
+const libelleTarif = (t) => {
+  const expire = t.date_fin && toInputDate(t.date_fin) < toInputDate(new Date())
+  return `${t.description || `Tarif ${t.type_tarif}`} — ${formatMoney(t.prix_unitaire)} Ar/unité${expire ? ' (expiré)' : ''}`
 }
 
 export default function Compteurs() {
   const [compteurs, setCompteurs] = useState([])
   const [contrats, setContrats] = useState([])
+  const [tarifs, setTarifs] = useState([])
   const [loading, setLoading] = useState(true)
+  // Suppressions (et gestion des tarifs) réservées aux administrateurs
+  const admin = authService.estAdmin()
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -32,12 +48,14 @@ export default function Compteurs() {
   const load = async () => {
     try {
       setLoading(true)
-      const [c, ct] = await Promise.all([
+      const [c, ct, t] = await Promise.all([
         compteurService.getAll(),
         contratService.getAll(),
+        tarifService.getAll(),
       ])
       setCompteurs(c)
       setContrats(ct)
+      setTarifs(t)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -58,11 +76,10 @@ export default function Compteurs() {
       numero_compteur: c.numero_compteur || '',
       type_compteur: c.type_compteur || '',
       marque: c.marque || '',
-      date_installation: c.date_installation
-        ? String(c.date_installation).slice(0, 10)
-        : '',
-      statut: c.statut || '',
+      date_installation: toInputDate(c.date_installation),
+      statut: c.statut || 'Actif',
       contrat_id: c.contrat_id || '',
+      tarif_id: c.tarif_id || '',
     })
     setError('')
     setShowModal(true)
@@ -76,9 +93,13 @@ export default function Compteurs() {
     e.preventDefault()
     setSaving(true)
     setError('')
+    setNotice('')
     try {
       if (editing) {
-        await compteurService.update(editing.id, form)
+        const saved = await compteurService.update(editing.id, form)
+        if (saved.factures_generees > 0) {
+          setNotice(`${saved.factures_generees} relevé(s) de ce compteur ajouté(s) aux factures`)
+        }
       } else {
         await compteurService.create(form)
       }
@@ -110,6 +131,7 @@ export default function Compteurs() {
       (c.statut || '').toLowerCase().includes(q)
     )
   })
+  const pagination = usePagination(filtered, search)
   return (
     <div>
       <div className="page-header">
@@ -133,6 +155,7 @@ export default function Compteurs() {
       </div>
 
       <Alert type="error" message={error} onClose={() => setError('')} />
+      <Alert type="success" message={notice} onClose={() => setNotice('')} />
 
       <div className="card table-wrapper">
         {loading ? (
@@ -140,53 +163,71 @@ export default function Compteurs() {
         ) : filtered.length === 0 ? (
           <div className="empty">Aucun compteur trouvé</div>
         ) : (
-          <table className="table-compteurs">
-            <thead>
-              <tr>
-                <th>N°</th>
-                <th>Numéro</th>
-                <th>Type</th>
-                <th>Marque</th>
-                <th>Installation</th>
-                <th>Statut</th>
-                <th>Contrat</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.id}</td>
-                  <td>{c.numero_compteur}</td>
-                  <td>{c.type_compteur}</td>
-                  <td>{c.marque}</td>
-                  <td>{formatDate(c.date_installation)}</td>
-                  <td>
-                    <span className={`badge ${statutBadge(c.statut)}`}>
-                      {c.statut}
-                    </span>
-                  </td>
-                  <td>{c.contrat_id ? `#${c.contrat_id}` : '—'}</td>
-                  <td>
-                    <div className="actions-cell">
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => openEdit(c)}
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(c.id)}
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </td>
+          <>
+            <table className="table-compteurs">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Numéro</th>
+                  <th>Type</th>
+                  <th>Marque</th>
+                  <th>Installation</th>
+                  <th>Statut</th>
+                  <th>Contrat</th>
+                  <th>Tarif</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pagination.pageItems.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.id}</td>
+                    <td>{c.numero_compteur}</td>
+                    <td>{c.type_compteur}</td>
+                    <td>{c.marque}</td>
+                    <td>{formatDate(c.date_installation)}</td>
+                    <td>
+                      <span className={`badge ${statutBadge(c.statut)}`}>
+                        {c.statut}
+                      </span>
+                    </td>
+                    <td>{c.contrat_id ? `#${c.contrat_id}` : '—'}</td>
+                    <td>
+                      {(() => {
+                        const t = tarifs.find((x) => x.id === c.tarif_id)
+                        return t ? (
+                          `${formatMoney(t.prix_unitaire)} Ar`
+                        ) : (
+                          <span className="badge badge-red" title="Ses relevés ne peuvent pas être facturés">
+                            Aucun tarif
+                          </span>
+                        )
+                      })()}
+                    </td>
+                    <td>
+                      <div className="actions-cell">
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => openEdit(c)}
+                        >
+                          Modifier
+                        </button>
+                        {admin && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(c.id)}
+                          >
+                            Supprimer
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Pagination pagination={pagination} />
+          </>
         )}
       </div>
 
@@ -202,14 +243,14 @@ export default function Compteurs() {
               >
                 Annuler
               </button>
-              <button className="btn" onClick={handleSubmit} disabled={saving}>
+              <button className="btn" type="submit" form="compteur-form" disabled={saving}>
                 {saving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </>
           }
         >
           {error && <Alert type="error" message={error} />}
-          <form className="form-grid" onSubmit={handleSubmit}>
+          <form id="compteur-form" className="form-grid" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Numéro compteur *</label>
               <input
@@ -246,28 +287,47 @@ export default function Compteurs() {
               />
             </div>
             <div className="form-group">
-              <label>Statut</label>
-              <input
-                name="statut"
-                value={form.statut}
-                onChange={handleChange}
-                placeholder="Actif, Hors service..."
-              />
+              <label>Statut *</label>
+              <select name="statut" value={form.statut} onChange={handleChange} required>
+                {STATUTS.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
             </div>
             <div className="form-group">
-              <label>Contrat</label>
+              <label>Contrat *</label>
               <select
                 name="contrat_id"
                 value={form.contrat_id}
                 onChange={handleChange}
+                required
               >
-                <option value="">-- Aucun --</option>
+                <option value="">-- Sélectionner --</option>
                 {contrats.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.numero_contrat}
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="form-group full">
+              <label>Tarif *</label>
+              <select
+                name="tarif_id"
+                value={form.tarif_id}
+                onChange={handleChange}
+                required
+              >
+                <option value="">-- Sélectionner --</option>
+                {tarifs.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {libelleTarif(t)}
+                  </option>
+                ))}
+              </select>
+              <small className="form-hint">
+                Prix appliqué aux relevés de ce compteur lors de la facturation
+              </small>
             </div>
           </form>
         </Modal>

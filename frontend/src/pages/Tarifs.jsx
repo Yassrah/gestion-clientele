@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react'
 import { tarifService } from '../services/tarif.service'
+import Pagination, { usePagination } from '../components/Pagination'
 import Alert from '../components/Alert'
+import { authService } from '../services/auth.service'
 import Modal from '../components/Modal'
-import { formatDate, formatMoney } from '../utils/format'
+import { formatDate, formatMoney, toInputDate } from '../utils/format'
+
+// Validité d'un tarif aujourd'hui (les relevés hors période ne sont pas facturables)
+function etatTarif(t) {
+  const aujourdhui = toInputDate(new Date())
+  if (toInputDate(t.date_debut) > aujourdhui) return { label: 'À venir', cls: 'badge-blue' }
+  if (t.date_fin && toInputDate(t.date_fin) < aujourdhui) return { label: 'Expiré', cls: 'badge-red' }
+  return { label: 'En vigueur', cls: 'badge-green' }
+}
 
 const emptyForm = {
   type_tarif: '',
@@ -15,6 +25,8 @@ const emptyForm = {
 export default function Tarifs() {
   const [tarifs, setTarifs] = useState([])
   const [loading, setLoading] = useState(true)
+  // Suppressions (et gestion des tarifs) réservées aux administrateurs
+  const admin = authService.estAdmin()
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -49,8 +61,8 @@ export default function Tarifs() {
     setForm({
       type_tarif: t.type_tarif || '',
       prix_unitaire: t.prix_unitaire || '',
-      date_debut: t.date_debut ? String(t.date_debut).slice(0, 10) : '',
-      date_fin: t.date_fin ? String(t.date_fin).slice(0, 10) : '',
+      date_debut: toInputDate(t.date_debut),
+      date_fin: toInputDate(t.date_fin),
       description: t.description || '',
     })
     setError('')
@@ -97,6 +109,7 @@ export default function Tarifs() {
       (t.description || '').toLowerCase().includes(q)
     )
   })
+  const pagination = usePagination(filtered, search)
   return (
     <div>
       <div className="page-header">
@@ -113,9 +126,11 @@ export default function Tarifs() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <button className="btn" onClick={openCreate}>
-            + Ajouter
-          </button>
+          {admin && (
+            <button className="btn" onClick={openCreate}>
+              + Ajouter
+            </button>
+          )}
         </div>
       </div>
 
@@ -127,47 +142,62 @@ export default function Tarifs() {
         ) : filtered.length === 0 ? (
           <div className="empty">Aucun tarif trouvé</div>
         ) : (
-          <table className="table-tarifs">
-            <thead>
-              <tr>
-                <th>N°</th>
-                <th>Type tarif</th>
-                <th>Prix unitaire</th>
-                <th>Début</th>
-                <th>Fin</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((t) => (
-                <tr key={t.id}>
-                  <td>{t.id}</td>
-                  <td>{t.type_tarif}</td>
-                  <td>{formatMoney(t.prix_unitaire)}</td>
-                  <td>{formatDate(t.date_debut)}</td>
-                  <td>{formatDate(t.date_fin)}</td>
-                  <td>{t.description}</td>
-                  <td>
-                    <div className="actions-cell">
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => openEdit(t)}
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(t.id)}
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </td>
+          <>
+            <table className="table-tarifs">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Type tarif</th>
+                  <th>Prix unitaire</th>
+                  <th>Début</th>
+                  <th>Fin</th>
+                  <th>Validité</th>
+                  <th>Compteurs</th>
+                  <th>Description</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pagination.pageItems.map((t) => (
+                  <tr key={t.id}>
+                    <td>{t.id}</td>
+                    <td>{t.type_tarif}</td>
+                    <td>{formatMoney(t.prix_unitaire)}</td>
+                    <td>{formatDate(t.date_debut)}</td>
+                    <td>{formatDate(t.date_fin)}</td>
+                    <td>
+                      <span className={`badge ${etatTarif(t).cls}`}>{etatTarif(t).label}</span>
+                    </td>
+                    <td>{t.nb_compteurs}</td>
+                    <td>{t.description}</td>
+                    <td>
+                      <div className="actions-cell">
+                        {admin && (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => openEdit(t)}
+                          >
+                            Modifier
+                          </button>
+                        )}
+                        {admin && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(t.id)}
+                            disabled={t.nb_compteurs > 0}
+                            title={t.nb_compteurs > 0 ? 'Tarif utilisé par des compteurs' : undefined}
+                          >
+                            Supprimer
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Pagination pagination={pagination} />
+          </>
         )}
       </div>
 
@@ -183,14 +213,14 @@ export default function Tarifs() {
               >
                 Annuler
               </button>
-              <button className="btn" onClick={handleSubmit} disabled={saving}>
+              <button className="btn" type="submit" form="tarif-form" disabled={saving}>
                 {saving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </>
           }
         >
           {error && <Alert type="error" message={error} />}
-          <form className="form-grid" onSubmit={handleSubmit}>
+          <form id="tarif-form" className="form-grid" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Type de tarif *</label>
               <input
@@ -202,10 +232,11 @@ export default function Tarifs() {
               />
             </div>
             <div className="form-group">
-              <label>Prix unitaire *</label>
+              <label>Prix unitaire (Ar) *</label>
               <input
                 type="number"
                 step="0.01"
+                min="0.01"
                 name="prix_unitaire"
                 value={form.prix_unitaire}
                 onChange={handleChange}
@@ -213,22 +244,25 @@ export default function Tarifs() {
               />
             </div>
             <div className="form-group">
-              <label>Date début</label>
+              <label>Valable à partir du *</label>
               <input
                 type="date"
                 name="date_debut"
                 value={form.date_debut}
                 onChange={handleChange}
+                required
               />
             </div>
             <div className="form-group">
-              <label>Date fin</label>
+              <label>Jusqu'au</label>
               <input
                 type="date"
                 name="date_fin"
                 value={form.date_fin}
                 onChange={handleChange}
+                min={form.date_debut || undefined}
               />
+              <small className="form-hint">Vide = sans date de fin</small>
             </div>
             <div className="form-group full">
               <label>Description</label>

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const ctrl = require('../controller/abonne.controller');
+const { exigerAdmin } = require('../middleware/role.middleware');
 
 // GET - récupérer tous les abonnés
 router.get('/', ctrl.getAllAbonne);
@@ -13,6 +14,7 @@ router.post('/', ctrl.createAbonne);
 router.put('/:id', ctrl.updateAbonne);
 
 // DELETE - supprimer un abonné
-router.delete('/:id', ctrl.deleteAbonne);
+// Suppression réservée aux administrateurs
+router.delete('/:id', exigerAdmin, ctrl.deleteAbonne);
 
 module.exports = router;
